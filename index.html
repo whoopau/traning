@@ -96,6 +96,9 @@ textarea{width:100%;background:#0f1f0f;border:1px solid #1a2a1a;border-radius:10
     <div style="font-size:30px;font-weight:800;color:#4caf50;line-height:1.1;margin-bottom:28px">Återhämtning</div>
   </div>
   <div class="pad">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+      <button onclick="renderHome()" style="background:none;border:1px solid #1a2a1a;border-radius:8px;color:#66bb6a;font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit">↻ Uppdatera</button>
+    </div>
     <div class="card" id="home-week-card" onclick="show('week')">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <span class="tag" style="margin:0">VECKANS MÅL</span>
@@ -299,7 +302,7 @@ const REHAB_SECTIONS = [
     {id:"r3",label:"Levator scapulae stretch",detail:"Hand bakom huvud mot vägg · 10 reps"},
     {id:"r4",label:"Boll mot bröst/axel",detail:"Myofascial release · 1–2 min"},
   ]},
-  {id:"upper",title:"MOVEMENT WORLD – NERVRELEASE ÖVRE",sub:"Upper body nervous system release",logKey:"release",items:[
+  {id:"upper",title:"MOVEMENT WORLD – NERVRELEASE ÖVRE",sub:"Upper body nervous system release",logKey:"release_upper",items:[
     {id:"r5",label:"Neck mobilization",detail:"Axel upp, sidoböj nacken bort · 6 reps/sida"},
     {id:"r6",label:"Prayer stretch thoracic",detail:"Händer ihop framåt, skjut övre ryggen bakåt som en båge · 10 reps"},
     {id:"r7",label:"Median nerve slider",detail:"Arm 90°, utsida rotation, böj nacken · 6 reps/sida"},
@@ -307,7 +310,7 @@ const REHAB_SECTIONS = [
     {id:"r9",label:"Ulnar nerve release",detail:"Arm upp, fingrar mot huvud, böj nacken · 6 reps/sida"},
     {id:"r10",label:"Ulnar nerve release 2",detail:"Böneposition, flytta åt sidan + nacke · 6 reps/sida"},
   ]},
-  {id:"lower",title:"MOVEMENT WORLD – NERVRELEASE NEDRE",sub:"Lower body nervous system release",logKey:"release",items:[
+  {id:"lower",title:"MOVEMENT WORLD – NERVRELEASE NEDRE",sub:"Lower body nervous system release",logKey:"release_lower",items:[
     {id:"r11",label:"Spine mobilization",detail:"Katt-ko på alla fyra eller mot stol · 10 reps"},
     {id:"r12",label:"Side bend mobilization",detail:"Mot vägg, sidoböj åt båda håll · 12 reps"},
     {id:"r13",label:"Piriformis stretch",detail:"Vristben på motsatt knä, dra skenben · 10 reps/sida"},
@@ -317,32 +320,34 @@ const REHAB_SECTIONS = [
 ];
 
 const GOALS = [
-  {id:"gym",     label:"Träningspass gym",     target:3, unit:"pass"},
-  {id:"stretch", label:"MW – Stretch nacke",   target:3, unit:"ggr"},
-  {id:"release", label:"MW – Nervrelease",     target:3, unit:"ggr"},
-  {id:"thoracal",label:"Thorakal + Boll",      target:5, unit:"dagar"},
+  {id:"gym",           label:"Träningspass gym",        target:3, unit:"pass"},
+  {id:"stretch",       label:"MW – Stretch nacke",      target:3, unit:"ggr"},
+  {id:"release_upper", label:"MW – Nervrelease övre",   target:3, unit:"ggr"},
+  {id:"release_lower", label:"MW – Nervrelease nedre",  target:3, unit:"ggr"},
+  {id:"thoracal",      label:"Thorakal + Boll",         target:5, unit:"dagar"},
 ];
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
 function ls(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}}
 function ss(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 
-let passLog    = ls("passLog",[]);
-let weeklyLog  = ls("weeklyLog",{});
+var passLog    = ls("passLog",[]);
+var weeklyLog  = ls("weeklyLog",{});
 // Migrate old keys to new structure
-if(weeklyLog.neck||weeklyLog.nerve||weeklyLog.foam||weeklyLog.ball){
+if(weeklyLog.neck||weeklyLog.nerve||weeklyLog.foam||weeklyLog.ball||weeklyLog.release){
   weeklyLog.stretch=[...(weeklyLog.stretch||[]),...(weeklyLog.neck||[])];
-  weeklyLog.release=[...(weeklyLog.release||[]),...(weeklyLog.nerve||[])];
+  weeklyLog.release_upper=[...(weeklyLog.release_upper||[]),...(weeklyLog.release||[])];
+  weeklyLog.release_lower=[...(weeklyLog.release_lower||[])];
   weeklyLog.thoracal=[...(weeklyLog.thoracal||[]),...(weeklyLog.foam||[]),...(weeklyLog.ball||[])];
-  delete weeklyLog.neck;delete weeklyLog.nerve;delete weeklyLog.foam;delete weeklyLog.ball;
+  delete weeklyLog.neck;delete weeklyLog.nerve;delete weeklyLog.foam;delete weeklyLog.ball;delete weeklyLog.release;
   ss("weeklyLog",weeklyLog);
 }
-let weights    = ls("weights",{});
-let passIdx    = 0;
-let checked    = {};
-let extras     = {};
-let rehabCheck = {};
-let pendingEntry = null;
+var weights    = ls("weights",{});
+var passIdx    = 0;
+var checked    = {};
+var extras     = {};
+var rehabCheck = {};
+var pendingEntry = null;
 
 // Init weights from defaults
 PASSES.forEach(p=>p.exercises.forEach(e=>{const k=`${p.id}-${e.id}`;if(!weights[k])weights[k]=e.w;}));
@@ -359,10 +364,11 @@ function weekStart(){
 function getCounts(){
   const ws=weekStart();
   return {
-    gym:     passLog.filter(e=>new Date(e.date)>=ws).length,
-    stretch: (weeklyLog.stretch||[]).filter(d=>new Date(d)>=ws).length,
-    release: (weeklyLog.release||[]).filter(d=>new Date(d)>=ws).length,
-    thoracal:(weeklyLog.thoracal||[]).filter(d=>new Date(d)>=ws).length,
+    gym:           passLog.filter(e=>new Date(e.date)>=ws).length,
+    stretch:       (weeklyLog.stretch||[]).filter(d=>new Date(d)>=ws).length,
+    release_upper: (weeklyLog.release_upper||[]).filter(d=>new Date(d)>=ws).length,
+    release_lower: (weeklyLog.release_lower||[]).filter(d=>new Date(d)>=ws).length,
+    thoracal:      (weeklyLog.thoracal||[]).filter(d=>new Date(d)>=ws).length,
   };
 }
 function logWeekly(key){
@@ -406,14 +412,14 @@ function renderHome(){
   document.getElementById("home-goals-text").textContent=allDone?"🎯 Klart!":`${done}/${GOALS.length} mål`;
   document.getElementById("home-goals-text").style.color=allDone?"#4caf50":"#4a5a4a";
   document.getElementById("home-rings").innerHTML=
-    ringHTML(c.gym,3,"Gym")+ringHTML(c.stretch,3,"MW Stretch")+ringHTML(c.release,3,"MW Release")+ringHTML(c.thoracal,5,"Thorakal");
+    ringHTML(c.gym,3,"Gym")+ringHTML(c.stretch,3,"Stretch")+ringHTML(c.release_upper,3,"Release övre")+ringHTML(c.release_lower,3,"Release nedre")+ringHTML(c.thoracal,5,"Thorakal");
   const gymBar=document.getElementById("home-gym-bar");
   const gPct=Math.min(100,Math.round(c.gym/3*100));
   gymBar.style.width=gPct+"%";gymBar.className="bar"+(c.gym>=3?" done":"");
   document.getElementById("home-gym-stat").textContent=`${c.gym}/3 pass denna vecka`;
   document.getElementById("home-gym-stat").style.color=c.gym>=3?"#4caf50":"#66bb6a";
   document.getElementById("home-rehab-stats").innerHTML=
-    [["MW Stretch",c.stretch,3],["MW Release",c.release,3],["Thorakal",c.thoracal,5]]
+    [["Stretch",c.stretch,3],["Release övre",c.release_upper,3],["Release nedre",c.release_lower,3],["Thorakal",c.thoracal,5]]
     .map(([l,v,m])=>`<span class="stat${v>=m?" done":""}">${l} ${v}/${m}</span>`).join("");
   document.getElementById("home-history-stat").textContent=passLog.length>0?`${passLog.length} pass totalt`:"Inga pass loggade än";
   document.getElementById("hist-btn").textContent=`HISTORIK${passLog.length>0?" ("+passLog.length+")":""}`;
@@ -636,7 +642,7 @@ function renderRehab(){
   html+=`<div class="section-label">THORAKALÖVNINGAR <button class="log-btn" id="log-thoracal" onclick="logSection('thoracal',this)">LOGGA</button></div>`;
   html+=`<div class="section-sub">Foam roller · Extension · Rotation · Stretch · Boll</div>`;
   THORACIC.forEach(ex=>{html+=rehabRow(`t-${ex.id}`,ex.label,ex.detail,"");});
-  html+=rehabRow("ball","Bollen mot väggen","Myofascial release längs paraspinal · 5 min","thoracal");
+  html+=rehabRow("ball","Bollen mot väggen","Myofascial release längs paraspinal · 5 min","");
   REHAB_SECTIONS.forEach(s=>{
     html+=`<div class="section-label" style="margin-top:24px;font-size:11px">${s.title} <button class="log-btn" id="log-${s.id}" onclick="logSection('${s.logKey}',this)">LOGGA</button></div>`;
     html+=`<div class="section-sub">${s.sub}</div>`;
