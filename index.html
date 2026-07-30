@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Träning">
+<meta name="theme-color" content="#0a160a">
+<title>Alexander – Träning</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#0a160a;color:#e8f5e9;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:env(safe-area-inset-bottom,20px)}
+.screen{display:none}.screen.active{display:block}
+.page{padding:0 0 80px}
+.ph{padding:28px 20px 16px;border-bottom:1px solid #1a2a1a;display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px}
+.ph-left .back{background:none;border:none;color:#4caf50;font-size:16px;cursor:pointer;padding:0 0 6px;display:block;font-family:inherit}
+.ph-left .sup{font-size:10px;letter-spacing:3px;color:#4caf50;font-weight:700;margin-bottom:5px}
+.ph-left .title{font-size:22px;font-weight:700}
+.pad{padding:0 20px}
+.tag{font-size:10px;letter-spacing:2.5px;color:#4caf50;font-weight:700;display:block;margin-bottom:5px}
+.card{background:#0f1f0f;border-radius:16px;padding:18px;margin-bottom:12px;border:1px solid #1a2a1a;cursor:pointer}
+.card.highlight{border-color:#4caf50}
+.card-title{font-size:19px;font-weight:700;margin-bottom:3px}
+.card-sub{font-size:12px;color:#4a5a4a;margin-bottom:8px}
+.bar-wrap{height:5px;background:#1a2a1a;border-radius:3px;overflow:hidden;margin-top:8px}
+.bar{height:100%;background:#2d5a2d;border-radius:3px;transition:width .3s}
+.bar.done{background:#4caf50}
+.rings{display:flex;justify-content:space-around;align-items:flex-start;margin:12px 0 4px}
+.ring-item{display:flex;flex-direction:column;align-items:center;gap:6px}
+.ring-label{font-size:10px;color:#4a5a4a;text-align:center;max-width:52px;line-height:1.2}
+.ring-val{font-size:13px;font-weight:700;color:#e8f5e9;text-align:center;margin-top:-52px;height:52px;display:flex;align-items:center;justify-content:center}
+.ring-val.done{color:#4caf50}
+.section-label{font-size:10px;letter-spacing:2px;color:#4caf50;font-weight:700;margin:20px 0 4px;display:flex;justify-content:space-between;align-items:center}
+.section-sub{font-size:11px;color:#4a5a4a;margin-bottom:6px}
+.check-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #1a2a1a;cursor:pointer;transition:opacity .2s;-webkit-user-select:none;user-select:none}
+.check-row.done{opacity:.4}
+.checkbox{width:24px;height:24px;border-radius:7px;border:2px solid #4caf50;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.checkbox.checked{background:#4caf50;border-color:#4caf50}
+.check-mark{color:#0a160a;font-size:14px;font-weight:800;display:none}
+.checkbox.checked .check-mark{display:block}
+.check-content{flex:1;min-width:0}
+.check-label{font-size:15px;font-weight:500;line-height:1.3}
+.check-detail{font-size:12px;color:#66bb6a;margin-top:3px;line-height:1.3}
+.check-right{flex-shrink:0;text-align:right}
+.sets{font-size:11px;color:#4a5a4a;margin-bottom:3px}
+.weight-tag{background:#1a2a1a;border-radius:6px;padding:4px 10px;color:#4caf50;font-size:13px;font-weight:600;min-width:64px;text-align:right;cursor:pointer;display:inline-block}
+.btn{width:100%;padding:13px 16px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.5px;border:none;font-family:inherit;transition:opacity .15s}
+.btn-primary{background:#4caf50;color:#0a160a}
+.btn-primary.dim{background:#1a2a1a;color:#4a5a4a}
+.btn-secondary{background:none;color:#4a5a4a;border:1px solid #1a2a1a}
+.btn-ghost{background:none;color:#4a5a4a;border:1px dashed #1a2a1a}
+.tab-bar{display:flex;border-bottom:1px solid #1a2a1a}
+.tab{flex:1;padding:14px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#4a5a4a;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit}
+.tab.active{color:#4caf50;border-bottom-color:#4caf50}
+.tab-sub{font-size:10px;margin-top:2px;font-weight:400}
+.progress-row{display:flex;justify-content:space-between;margin-bottom:6px}
+.progress-row span{font-size:11px;color:#4a5a4a;font-weight:600}
+.progress-row .val{color:#66bb6a}
+.progress-row .val.done{color:#4caf50}
+.log-btn{background:none;border:1px solid #1a2a1a;border-radius:6px;color:#66bb6a;font-size:10px;padding:3px 10px;cursor:pointer;font-weight:600;letter-spacing:.5px;font-family:inherit}
+.history-entry{background:#0f1f0f;border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.history-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1a2a1a;font-size:13px}
+.goal-row{margin-bottom:18px}
+.goal-top{display:flex;justify-content:space-between;margin-bottom:6px}
+.goal-name{font-size:14px;font-weight:500}
+.goal-count{font-size:14px;font-weight:700;color:#66bb6a}
+.goal-name.done,.goal-count.done{color:#4caf50}
+.done-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:32px;text-align:center}
+.emoji{font-size:52px;margin-bottom:12px}
+.big-title{font-size:24px;font-weight:800;margin-bottom:4px}
+.sub-text{color:#66bb6a;font-size:13px;margin-bottom:32px}
+textarea{width:100%;background:#0f1f0f;border:1px solid #1a2a1a;border-radius:10px;color:#e8f5e9;font-size:14px;padding:12px 14px;min-height:80px;font-family:inherit;resize:none;outline:none}
+.weight-input{background:#1a2a1a;border:1px solid #4caf50;border-radius:6px;color:#e8f5e9;font-size:13px;padding:4px 8px;width:100px;text-align:right;font-family:inherit;outline:none}
+.extra-card{background:#0f1f0f;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1px solid #1a2a1a}
+.extra-card.added{border-color:#4caf50}
+.extra-top{display:flex;justify-content:space-between;align-items:flex-start}
+.add-btn{background:none;border:1px solid #1a2a1a;border-radius:8px;color:#4a5a4a;font-size:12px;padding:6px 12px;cursor:pointer;font-weight:700;margin-left:12px;flex-shrink:0;font-family:inherit}
+.add-btn.added{background:#4caf50;border-color:#4caf50;color:#0a160a}
+.summary-card{background:#0f1f0f;border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.summary-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1a2a1a;font-size:13px}
+.hint{font-size:11px;color:#4a5a4a;text-align:center;margin:12px 0}
+.week-banner{background:#0a2a0a;border:1px solid #4caf50;border-radius:12px;padding:16px;margin-bottom:20px;text-align:center}
+.stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.stat{font-size:12px;color:#66bb6a}
+.stat.done{color:#4caf50}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="s-home" class="screen active page">
+  <div style="padding:36px 20px 0">
+    <div style="font-size:11px;letter-spacing:3px;color:#4caf50;font-weight:700;margin-bottom:6px">ALEXANDER</div>
+    <div style="font-size:30px;font-weight:800;line-height:1.1;margin-bottom:2px">Träning &</div>
+    <div style="font-size:30px;font-weight:800;color:#4caf50;line-height:1.1;margin-bottom:28px">Återhämtning</div>
+  </div>
+  <div class="pad">
+    <div class="card" id="home-week-card" onclick="show('week')">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span class="tag" style="margin:0">VECKANS MÅL</span>
+        <span id="home-goals-text" style="font-size:12px;color:#4a5a4a;font-weight:600"></span>
+      </div>
+      <div class="rings" id="home-rings"></div>
+      <div class="hint" style="margin-top:4px">Tryck för detaljer →</div>
+    </div>
+    <div class="card" onclick="show('workout')">
+      <span class="tag">GYM</span>
+      <div class="card-title">Träningspass</div>
+      <div class="card-sub">Pass 1 · Pass 2 · Extraövningar</div>
+      <div class="bar-wrap"><div class="bar" id="home-gym-bar" style="width:0%"></div></div>
+      <div id="home-gym-stat" style="font-size:12px;color:#66bb6a;margin-top:6px;font-weight:600"></div>
+    </div>
+    <div class="card" onclick="show('rehab')">
+      <span class="tag">DAGLIGEN</span>
+      <div class="card-title">Rehab & Nervrelease</div>
+      <div class="card-sub">Thorakal · Nacke & axlar · Nervrelease</div>
+      <div class="stats-row" id="home-rehab-stats"></div>
+    </div>
+    <div class="card" onclick="show('history')">
+      <span class="tag">HISTORIK</span>
+      <div class="card-title">Loggade pass</div>
+      <div id="home-history-stat" class="card-sub" style="margin-top:3px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- WEEK -->
+<div id="s-week" class="screen page">
+  <div class="ph">
+    <div class="ph-left">
+      <button class="back" onclick="show('home')">← Tillbaka</button>
+      <div class="sup">MÅL</div>
+      <div class="title">Veckans mål</div>
+    </div>
+  </div>
+  <div class="pad">
+    <div id="week-banner" style="display:none" class="week-banner">
+      <div style="font-size:32px;margin-bottom:6px">🎯</div>
+      <div style="color:#4caf50;font-weight:700;font-size:16px">Alla veckans mål klara!</div>
+    </div>
+    <div id="week-goals"></div>
+    <div class="hint" style="margin-top:16px">Räknas från måndag · Nollställs automatiskt</div>
+  </div>
+</div>
+
+<!-- WORKOUT -->
+<div id="s-workout" class="screen page">
+  <div class="ph">
+    <div class="ph-left">
+      <div class="sup">TRÄNINGSPASS</div>
+      <div class="title">Alexander</div>
+    </div>
+    <button onclick="show('history')" style="background:none;border:1px solid #1a2a1a;border-radius:8px;color:#66bb6a;font-size:12px;padding:6px 12px;cursor:pointer;font-family:inherit" id="hist-btn">HISTORIK</button>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" id="tab-0" onclick="switchPass(0)">PASS 1<div class="tab-sub">Rygg · Bål · Ben</div></button>
+    <button class="tab" id="tab-1" onclick="switchPass(1)">PASS 2<div class="tab-sub">Bröst · Triceps · Drag</div></button>
+  </div>
+  <div style="padding:14px 20px 6px">
+    <div class="progress-row">
+      <span>FRAMSTEG</span>
+      <span class="val" id="wo-progress-val"></span>
+    </div>
+    <div class="bar-wrap" style="height:6px"><div class="bar" id="wo-progress-bar" style="width:0%"></div></div>
+  </div>
+  <div class="pad" id="wo-content"></div>
+</div>
+
+<!-- EXTRA EXERCISES -->
+<div id="s-extras" class="screen page">
+  <div class="ph">
+    <div class="ph-left">
+      <button class="back" onclick="show('workout')">← Tillbaka</button>
+      <div class="sup">VALFRIA</div>
+      <div class="title">Extraövningar</div>
+    </div>
+  </div>
+  <div class="pad">
+    <div style="font-size:12px;color:#4a5a4a;margin-bottom:16px">Lägg till extraövningar i dagens pass</div>
+    <div id="extras-content"></div>
+    <div style="margin-top:8px"><button class="btn btn-primary" onclick="show('workout')">Klar – tillbaka till passet</button></div>
+  </div>
+</div>
+
+<!-- ACTIVITY -->
+<div id="s-activity" class="screen page">
+  <div style="padding:40px 24px">
+    <div class="done-screen" style="min-height:auto;padding:0;margin-bottom:28px">
+      <div class="emoji">💪</div>
+      <div class="big-title">Pass klart!</div>
+      <div class="sub-text" id="act-sub"></div>
+    </div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px">Gjorde du något annat idag?</div>
+      <div style="font-size:12px;color:#4a5a4a;margin-bottom:10px">T.ex. "40 min löpning" eller lämna tomt</div>
+      <textarea id="act-input" placeholder="Skriv här..."></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="finishPass()">Logga & visa sammanfattning</button>
+    <div style="margin-top:10px"><button class="btn btn-secondary" onclick="skipActivity()">Hoppa över</button></div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div id="s-summary" class="screen page">
+  <div style="padding:32px 20px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:48px;margin-bottom:10px">📋</div>
+      <div style="font-size:22px;font-weight:800;margin-bottom:4px">Träningslogg</div>
+      <div style="color:#66bb6a;font-size:13px" id="sum-date"></div>
+    </div>
+    <div id="sum-content"></div>
+    <div class="hint">📸 Ta en skärmdump eller klistra in i Claude!</div>
+    <div style="margin-top:12px"><button class="btn btn-primary" onclick="show('home')">Tillbaka till start</button></div>
+  </div>
+</div>
+
+<!-- REHAB -->
+<div id="s-rehab" class="screen page">
+  <div class="ph">
+    <div class="ph-left">
+      <button class="back" onclick="show('home')">← Tillbaka</button>
+      <div class="sup">MOVEMENT WORLD</div>
+      <div class="title">Rehab & Nervrelease</div>
+    </div>
+  </div>
+  <div class="pad" id="rehab-content"></div>
+</div>
+
+<!-- HISTORY -->
+<div id="s-history" class="screen page">
+  <div class="ph">
+    <div class="ph-left">
+      <button class="back" onclick="show('home')">← Tillbaka</button>
+      <div class="sup">HISTORIK</div>
+      <div class="title" id="hist-title"></div>
+    </div>
+  </div>
+  <div class="pad" id="hist-content"></div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const PASSES = [
+  { id:0, name:"PASS 1", focus:"Rygg · Bål · Ben",
+    warmup:[{id:"w1",label:"Cykel",detail:"5–10 min"},{id:"w2",label:"Foam roller thorakal",detail:"3 min"}],
+    exercises:[
+      {id:"e1",label:"Lat pulldown",sets:"3×12",w:"35kg"},
+      {id:"e2",label:"Sittande rodd",sets:"3×12",w:"35kg"},
+      {id:"e3",label:"Facepulls",sets:"3×15",w:"10kg"},
+      {id:"e4",label:"Pallof press",sets:"3×10",w:"7.5kg/sida"},
+      {id:"e5",label:"Benpress",sets:"3×12",w:"57.5kg"},
+      {id:"e6",label:"Goblet squat",sets:"3×10",w:"lätt"},
+      {id:"e7",label:"Dead bug",sets:"3×8/sida",w:"–"},
+    ],
+    cooldown:[
+      {id:"c1",label:"Foam roller thorakal",detail:"5 min"},
+      {id:"c2",label:"Thoracic windmill",detail:"Mot vägg · 10 reps/sida"},
+      {id:"c3",label:"Sidliggande rotation",detail:"10 reps/sida"},
+      {id:"c4",label:"Lateral thoracic stretch",detail:"30–60 sek/sida"},
+    ]},
+  { id:1, name:"PASS 2", focus:"Bröst · Triceps · Drag",
+    warmup:[{id:"w1",label:"Cykel",detail:"5–10 min"},{id:"w2",label:"Foam roller thorakal",detail:"3 min"}],
+    exercises:[
+      {id:"e1",label:"Hantelpress 30–45°",sets:"3×12",w:"15kg/hand"},
+      {id:"e2",label:"Kabelkorsning låg–hög",sets:"3×12",w:"5kg/sida"},
+      {id:"e3",label:"Facepulls",sets:"3×15",w:"10kg"},
+      {id:"e4",label:"Hantelrodd",sets:"3×12",w:"10kg/sida"},
+      {id:"e5",label:"Triceps pushdown",sets:"3×12",w:"21.25kg"},
+      {id:"e6",label:"Dead bug",sets:"3×8/sida",w:"–"},
+    ],
+    cooldown:[
+      {id:"c1",label:"Foam roller thorakal",detail:"5 min"},
+      {id:"c2",label:"Thoracic extension on bench",detail:"Händer bakom huvud"},
+      {id:"c3",label:"Lateral thoracic stretch",detail:"30–60 sek/sida"},
+      {id:"c4",label:"Sidliggande rotation",detail:"10 reps/sida"},
+    ]}
+];
+
+const EXTRAS = [
+  {id:"x1",label:"Incline dumbbell curl",detail:"Biceps · 45° bänk",sets:"3×12",w:"8kg"},
+  {id:"x2",label:"Bulgarian split squat",detail:"Ben framsida · Hantlar",sets:"3×10/sida",w:"10kg/hand"},
+  {id:"x3",label:"Stående kabelrotation",detail:"Mage · Kabel i midjehöjd",sets:"3×12/sida",w:"5kg"}
+];
+
+const THORACIC = [
+  {id:"t1",label:"Foam roller thorakal",detail:"Extension segment för segment · 5 min"},
+  {id:"t2",label:"Thoracic extension on bench",detail:"Händer bakom huvud, sjunk bakåt"},
+  {id:"t3",label:"Thoracic windmill",detail:"Mot vägg, öppen rotation · 10 reps/sida"},
+  {id:"t4",label:"Sidliggande rotation",detail:"Rotera öppet · 10 reps/sida"},
+  {id:"t5",label:"Lateral thoracic stretch",detail:"Arm över huvud, luta åt sidan · 30–60 sek/sida"},
+];
+
+const REHAB_SECTIONS = [
+  {id:"neck",title:"NACKE & AXLAR",sub:"Movement World – Tightness in neck & shoulders",logKey:"neck",items:[
+    {id:"r1",label:"Armar ut i T – palm upp",detail:"Palmer uppåt, håll · 10 reps/sida"},
+    {id:"r1b",label:"Thoracic rotation öppen",detail:"Armar i T, rotera öppet · 10 reps/sida"},
+    {id:"r2",label:"Sub occipital stretch",detail:"Nacklutning mot vägg, palm upp · 10 fram/10 bak"},
+    {id:"r3",label:"Levator scapulae stretch",detail:"Hand bakom huvud mot vägg · 10 reps"},
+    {id:"r4",label:"Boll mot bröst/axel",detail:"Myofascial release · 1–2 min"},
+  ]},
+  {id:"nerve",title:"NERVRELEASE ÖVRE + NEDRE",sub:"Movement World – Upper & Lower body",logKey:"nerve",items:[
+    {id:"r5",label:"Neck mobilization",detail:"Axel upp, sidoböj nacken bort · 6 reps/sida"},
+    {id:"r6",label:"Neck & shoulder mobilization",detail:"Arm fram/bak med thorakal rotation · 10 reps"},
+    {id:"r7",label:"Median nerve slider",detail:"Arm 90°, utsida rotation, böj nacken · 6 reps/sida"},
+    {id:"r8",label:"Radial nerve release",detail:"Knytnäve, skulderblad ner, arm upp · 6 reps/sida"},
+    {id:"r9",label:"Ulnar nerve release",detail:"Arm upp, fingrar mot huvud, böj nacken · 6 reps/sida"},
+    {id:"r10",label:"Ulnar nerve release 2",detail:"Böneposition, flytta åt sidan + nacke · 6 reps/sida"},
+    {id:"r11",label:"Spine mobilization",detail:"Katt-ko på alla fyra eller mot stol · 10 reps"},
+    {id:"r12",label:"Side bend mobilization",detail:"Mot vägg, sidoböj åt båda håll · 12 reps"},
+    {id:"r13",label:"Piriformis stretch",detail:"Vristben på motsatt knä, dra skenben · 10 reps/sida"},
+    {id:"r14",label:"Sciatic nerve slider",detail:"Sittande, sträck knä + tår, 3 positioner · 5 reps/sida"},
+    {id:"r15",label:"Saphenous nerve slider",detail:"Fot mot vägg, luta framåt + böj bakhuvud · 5 reps/sida"},
+  ]}
+];
+
+const GOALS = [
+  {id:"gym",label:"Träningspass gym",target:3,unit:"pass"},
+  {id:"neck",label:"Nacke & axlar",target:3,unit:"ggr"},
+  {id:"nerve",label:"Nervrelease övre + nedre",target:3,unit:"ggr"},
+  {id:"foam",label:"Foam roller + thorakalövningar",target:5,unit:"dagar"},
+  {id:"ball",label:"Bollen mot väggen",target:3,unit:"ggr"},
+];
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+function ls(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}}
+function ss(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+
+let passLog    = ls("passLog",[]);
+let weeklyLog  = ls("weeklyLog",{});
+let weights    = ls("weights",{});
+let passIdx    = 0;
+let checked    = {};
+let extras     = {};
+let rehabCheck = {};
+let pendingEntry = null;
+
+// Init weights from defaults
+PASSES.forEach(p=>p.exercises.forEach(e=>{const k=`${p.id}-${e.id}`;if(!weights[k])weights[k]=e.w;}));
+EXTRAS.forEach(e=>{if(!weights[`x-${e.id}`])weights[`x-${e.id}`]=e.w;});
+
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+function fmtDate(iso){
+  return new Date(iso).toLocaleDateString("sv-SE",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+}
+function weekStart(){
+  const d=new Date(),day=d.getDay();
+  d.setDate(d.getDate()-(day===0?6:day-1));d.setHours(0,0,0,0);return d;
+}
+function getCounts(){
+  const ws=weekStart();
+  return {
+    gym: passLog.filter(e=>new Date(e.date)>=ws).length,
+    neck:(weeklyLog.neck||[]).filter(d=>new Date(d)>=ws).length,
+    nerve:(weeklyLog.nerve||[]).filter(d=>new Date(d)>=ws).length,
+    foam:(weeklyLog.foam||[]).filter(d=>new Date(d)>=ws).length,
+    ball:(weeklyLog.ball||[]).filter(d=>new Date(d)>=ws).length,
+  };
+}
+function logWeekly(key){
+  weeklyLog[key]=[...(weeklyLog[key]||[]),new Date().toISOString()];
+  ss("weeklyLog",weeklyLog);
+}
+
+// ─── NAV ────────────────────────────────────────────────────────────────────
+function show(s){
+  document.querySelectorAll(".screen").forEach(el=>el.classList.remove("active"));
+  document.getElementById("s-"+s).classList.add("active");
+  window.scrollTo(0,0);
+  if(s==="home")renderHome();
+  if(s==="week")renderWeek();
+  if(s==="workout")renderWorkout();
+  if(s==="rehab")renderRehab();
+  if(s==="history")renderHistory();
+  if(s==="extras")renderExtras();
+}
+
+// ─── RING SVG ────────────────────────────────────────────────────────────────
+function ringHTML(val,max,label){
+  const size=54,r=(size-8)/2,circ=2*Math.PI*r,pct=Math.min(1,val/max),dash=circ*pct,done=val>=max;
+  return `<div class="ring-item">
+    <svg width="${size}" height="${size}" style="transform:rotate(-90deg)">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#1a2a1a" stroke-width="5.5"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${done?"#4caf50":"#2d5a2d"}" stroke-width="5.5"
+        stroke-dasharray="${dash} ${circ}" stroke-linecap="round" style="transition:stroke-dasharray .3s"/>
+    </svg>
+    <div class="ring-val${done?" done":""}" style="margin-top:-${size+4}px;height:${size}px">${val}/${max}</div>
+    <div class="ring-label">${label}</div>
+  </div>`;
+}
+
+// ─── HOME ────────────────────────────────────────────────────────────────────
+function renderHome(){
+  const c=getCounts();
+  const done=GOALS.filter(g=>c[g.id]>=g.target).length;
+  const allDone=done===GOALS.length;
+  document.getElementById("home-week-card").className="card"+(allDone?" highlight":"");
+  document.getElementById("home-goals-text").textContent=allDone?"🎯 Klart!":`${done}/${GOALS.length} mål`;
+  document.getElementById("home-goals-text").style.color=allDone?"#4caf50":"#4a5a4a";
+  document.getElementById("home-rings").innerHTML=
+    ringHTML(c.gym,3,"Gym")+ringHTML(c.neck,3,"Nacke")+ringHTML(c.nerve,3,"Nerve")+ringHTML(c.foam,5,"Foam")+ringHTML(c.ball,3,"Boll");
+  const gymBar=document.getElementById("home-gym-bar");
+  const gPct=Math.min(100,Math.round(c.gym/3*100));
+  gymBar.style.width=gPct+"%";gymBar.className="bar"+(c.gym>=3?" done":"");
+  document.getElementById("home-gym-stat").textContent=`${c.gym}/3 pass denna vecka`;
+  document.getElementById("home-gym-stat").style.color=c.gym>=3?"#4caf50":"#66bb6a";
+  document.getElementById("home-rehab-stats").innerHTML=
+    [["Nacke",c.neck,3],["Nervrelease",c.nerve,3],["Foam roller",c.foam,5],["Boll",c.ball,3]]
+    .map(([l,v,m])=>`<span class="stat${v>=m?" done":""}">${l} ${v}/${m}</span>`).join("");
+  document.getElementById("home-history-stat").textContent=passLog.length>0?`${passLog.length} pass totalt`:"Inga pass loggade än";
+  document.getElementById("hist-btn").textContent=`HISTORIK${passLog.length>0?" ("+passLog.length+")":""}`;
+}
+
+// ─── WEEK ────────────────────────────────────────────────────────────────────
+function renderWeek(){
+  const c=getCounts();
+  const allDone=GOALS.every(g=>c[g.id]>=g.target);
+  document.getElementById("week-banner").style.display=allDone?"block":"none";
+  document.getElementById("week-goals").innerHTML=GOALS.map(g=>{
+    const v=c[g.id],d=v>=g.target,pct=Math.min(100,Math.round(v/g.target*100));
+    return `<div class="goal-row">
+      <div class="goal-top">
+        <span class="goal-name${d?" done":""}">${d?"✓ ":""}${g.label}</span>
+        <span class="goal-count${d?" done":""}">${v}/${g.target} ${g.unit}</span>
+      </div>
+      <div class="bar-wrap" style="height:6px"><div class="bar${d?" done":""}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("");
+}
+
+// ─── WORKOUT ─────────────────────────────────────────────────────────────────
+function switchPass(idx){
+  passIdx=idx;checked={};extras={};
+  document.querySelectorAll(".tab").forEach((t,i)=>t.classList.toggle("active",i===idx));
+  renderWorkout();
+}
+
+function getWoItems(){
+  const p=PASSES[passIdx];
+  return [
+    ...p.warmup.map(i=>`w-${i.id}`),
+    ...p.exercises.map(i=>`e-${i.id}`),
+    ...EXTRAS.filter(x=>extras[x.id]).map(x=>`x-${x.id}`),
+    ...p.cooldown.map(i=>`c-${i.id}`)
+  ];
+}
+
+function updateProgress(){
+  const items=getWoItems(),done=items.filter(k=>checked[k]).length,pct=items.length?Math.round(done/items.length*100):0;
+  const ready=pct===100;
+  document.getElementById("wo-progress-val").textContent=`${done}/${items.length} · ${pct}%`;
+  document.getElementById("wo-progress-val").className="val"+(ready?" done":"");
+  const bar=document.getElementById("wo-progress-bar");
+  bar.style.width=pct+"%";bar.className="bar"+(ready?" done":"");
+  const btn=document.getElementById("submit-btn");
+  if(btn){btn.textContent=ready?"✓ SLUTFÖR PASS":`SLUTFÖR PASS · ${pct}%`;btn.className="btn btn-primary"+(ready?"":" dim");}
+}
+
+function toggleCheck(key){
+  checked[key]=!checked[key];
+  const row=document.getElementById("r-"+key);
+  const box=document.getElementById("b-"+key);
+  if(row)row.className="check-row"+(checked[key]?" done":"");
+  if(box){box.className="checkbox"+(checked[key]?" checked":"");box.innerHTML=checked[key]?'<span class="check-mark">✓</span>':"";}
+  updateProgress();
+}
+
+function editWeight(key,label){
+  const cur=weights[key]||"";
+  const val=prompt(`Vikt för ${label}:`,cur);
+  if(val!==null&&val.trim()){weights[key]=val.trim();ss("weights",weights);renderWorkout();}
+}
+
+function checkRowHTML(key,label,detail,w,sets,isExercise,wKey){
+  const c=!!checked[key];
+  return `<div class="check-row${c?" done":""}" id="r-${key}" onclick="toggleCheck('${key}')">
+    <div class="checkbox${c?" checked":""}" id="b-${key}">${c?'<span class="check-mark">✓</span>':""}</div>
+    <div class="check-content">
+      <div class="check-label">${label}</div>
+      ${detail?`<div class="check-detail">${detail}</div>`:""}
+    </div>
+    ${isExercise?`<div class="check-right">
+      <div class="sets">${sets}</div>
+      <div class="weight-tag" onclick="event.stopPropagation();editWeight('${wKey}','${label}')">${w}</div>
+    </div>`:""}
+  </div>`;
+}
+
+function renderWorkout(){
+  const p=PASSES[passIdx];let html="";
+  html+=`<div class="section-label">UPPVÄRMNING</div>`;
+  p.warmup.forEach(i=>{html+=checkRowHTML(`w-${i.id}`,i.label,i.detail,"","",false,"");});
+  html+=`<div class="section-label">ÖVNINGAR <span style="font-size:10px;color:#4a5a4a;font-weight:400">Tryck på vikten för att ändra</span></div>`;
+  p.exercises.forEach(e=>{const wk=`${p.id}-${e.id}`;html+=checkRowHTML(`e-${e.id}`,e.label,"",weights[wk]||e.w,e.sets,true,wk);});
+  EXTRAS.filter(x=>extras[x.id]).forEach(x=>{const wk=`x-${x.id}`;html+=checkRowHTML(`x-${x.id}`,x.label,x.detail,weights[wk]||x.w,x.sets,true,wk);});
+  html+=`<button class="btn btn-ghost" style="margin-top:10px" onclick="show('extras')">+ LÄGG TILL EXTRAÖVNING</button>`;
+  html+=`<div class="section-label" style="margin-top:20px">AVSLUT · REHAB</div>`;
+  p.cooldown.forEach(i=>{html+=checkRowHTML(`c-${i.id}`,i.label,i.detail,"","",false,"");});
+  html+=`<div style="margin-top:24px">
+    <button class="btn btn-primary dim" id="submit-btn" onclick="submitPass()">SLUTFÖR PASS · 0%</button>
+    <div style="margin-top:10px"><button class="btn btn-secondary" onclick="checked={};extras={};renderWorkout()">ÅTERSTÄLL</button></div>
+  </div>`;
+  document.getElementById("wo-content").innerHTML=html;
+  updateProgress();
+}
+
+function submitPass(){
+  const now=new Date().toISOString();
+  const p=PASSES[passIdx];
+  const cooldownDone=p.cooldown.filter(c=>checked[`c-${c.id}`]).map(c=>c.label);
+  const entry={
+    date:now,passName:p.name,focus:p.focus,
+    exercises:p.exercises.map(e=>({label:e.label,weight:weights[`${p.id}-${e.id}`]||e.w,sets:e.sets,done:!!checked[`e-${e.id}`]})),
+    extras:EXTRAS.filter(x=>extras[x.id]).map(x=>({label:x.label,weight:weights[`x-${x.id}`]||x.w,sets:x.sets})),
+    cooldownDone,
+  };
+  pendingEntry=entry;
+  weeklyLog.gym=[...(weeklyLog.gym||[]),now];
+  if(cooldownDone.length>=2){weeklyLog.foam=[...(weeklyLog.foam||[]),now];}
+  ss("weeklyLog",weeklyLog);
+  checked={};extras={};
+  document.getElementById("act-sub").textContent=`${p.name} · ${fmtDate(now)}`;
+  document.getElementById("act-input").value="";
+  show("activity");
+}
+
+function finishPass(){
+  const extra=document.getElementById("act-input").value.trim();
+  if(extra&&pendingEntry)pendingEntry.extraActivity=extra;
+  passLog.push(pendingEntry);ss("passLog",passLog);
+  renderSummary(pendingEntry);
+  show("summary");
+}
+
+function skipActivity(){
+  passLog.push(pendingEntry);ss("passLog",passLog);
+  renderSummary(pendingEntry);
+  show("summary");
+}
+
+function renderSummary(e){
+  const d=new Date(e.date);
+  document.getElementById("sum-date").textContent=`${e.passName} · ${d.toLocaleDateString("sv-SE",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}`;
+  const doneEx=e.exercises.filter(ex=>ex.done);
+  const missedEx=e.exercises.filter(ex=>!ex.done);
+  let html="";
+  if(doneEx.length){
+    html+=`<div class="summary-card"><div class="section-label" style="margin:0 0 10px">ÖVNINGAR KLARA</div>`;
+    doneEx.forEach((ex,i)=>{html+=`<div class="summary-row${i<doneEx.length-1?"":' style="border:none"'}"><span style="color:#e8f5e9">✓ ${ex.label}</span><span style="color:#4caf50;font-weight:600">${ex.weight}</span></div>`;});
+    html+=`</div>`;
+  }
+  if(missedEx.length){
+    html+=`<div class="summary-card"><div class="section-label" style="margin:0 0 10px;color:#4a5a4a">MISSADE</div>`;
+    missedEx.forEach((ex,i)=>{html+=`<div style="font-size:13px;color:#4a5a4a;padding:5px 0${i<missedEx.length-1?";border-bottom:1px solid #1a2a1a":""}">– ${ex.label}</div>`;});
+    html+=`</div>`;
+  }
+  if(e.cooldownDone?.length){
+    html+=`<div class="summary-card"><div class="section-label" style="margin:0 0 10px">AVSLUT · REHAB</div>`;
+    e.cooldownDone.forEach((c,i)=>{html+=`<div style="font-size:13px;color:#e8f5e9;padding:5px 0${i<e.cooldownDone.length-1?";border-bottom:1px solid #1a2a1a":""}">✓ ${c}</div>`;});
+    html+=`</div>`;
+  }
+  if(e.extras?.length){
+    html+=`<div class="summary-card"><div class="section-label" style="margin:0 0 10px">EXTRA</div>`;
+    e.extras.forEach((ex,i)=>{html+=`<div class="summary-row${i<e.extras.length-1?"":' style="border:none"'}"><span>✓ ${ex.label}</span><span style="color:#4caf50">${ex.weight}</span></div>`;});
+    html+=`</div>`;
+  }
+  if(e.extraActivity){
+    html+=`<div class="summary-card"><div class="section-label" style="margin:0 0 6px">ÖVRIGT</div><div style="font-size:13px;color:#e8f5e9">${e.extraActivity}</div></div>`;
+  }
+  document.getElementById("sum-content").innerHTML=html;
+}
+
+// ─── EXTRAS ──────────────────────────────────────────────────────────────────
+function toggleExtra(id){
+  extras[id]=!extras[id];
+  renderExtras();
+}
+
+function renderExtras(){
+  document.getElementById("extras-content").innerHTML=EXTRAS.map(ex=>{
+    const added=!!extras[ex.id];
+    return `<div class="extra-card${added?" added":""}">
+      <div class="extra-top">
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:600;margin-bottom:2px">${ex.label}</div>
+          <div style="font-size:12px;color:#66bb6a">${ex.detail}</div>
+          <div style="font-size:11px;color:#4a5a4a;margin-top:2px">${ex.sets}</div>
+        </div>
+        <button class="add-btn${added?" added":""}" onclick="toggleExtra('${ex.id}')">${added?"✓ Tillagd":"+ Lägg till"}</button>
+      </div>
+      ${added?`<div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+        <span style="font-size:12px;color:#4a5a4a">Vikt:</span>
+        <input class="weight-input" value="${weights[`x-${ex.id}`]||ex.w}" onchange="weights['x-${ex.id}']=this.value;ss('weights',weights)">
+      </div>`:""}
+    </div>`;
+  }).join("");
+}
+
+// ─── REHAB ───────────────────────────────────────────────────────────────────
+function toggleRehab(key,autoLog){
+  rehabCheck[key]=!rehabCheck[key];
+  const row=document.getElementById("rr-"+key);
+  const box=document.getElementById("rb-"+key);
+  if(row)row.className="check-row"+(rehabCheck[key]?" done":"");
+  if(box){box.className="checkbox"+(rehabCheck[key]?" checked":"");box.innerHTML=rehabCheck[key]?'<span class="check-mark">✓</span>':"";}
+  if(rehabCheck[key]&&autoLog)logWeekly(autoLog);
+}
+
+function logSection(key){
+  logWeekly(key);
+  const btn=document.getElementById("log-"+key);
+  if(btn){btn.textContent="✓ Loggat!";btn.style.color="#4caf50";setTimeout(()=>{btn.textContent="LOGGA";btn.style.color="";},2000);}
+}
+
+function rehabRow(key,label,detail,autoLog){
+  return `<div class="check-row" id="rr-${key}" onclick="toggleRehab('${key}','${autoLog||""}')">
+    <div class="checkbox" id="rb-${key}"></div>
+    <div class="check-content">
+      <div class="check-label">${label}</div>
+      ${detail?`<div class="check-detail">${detail}</div>`:""}
+    </div>
+  </div>`;
+}
+
+function renderRehab(){
+  rehabCheck={};
+  let html="";
+  html+=`<div class="section-label">THORAKALÖVNINGAR <button class="log-btn" id="log-foam" onclick="logSection('foam')">LOGGA</button></div>`;
+  html+=`<div class="section-sub">Foam roller · Extension · Rotation · Stretch</div>`;
+  THORACIC.forEach(ex=>{html+=rehabRow(`t-${ex.id}`,ex.label,ex.detail,"");});
+  REHAB_SECTIONS.forEach(s=>{
+    html+=`<div class="section-label">${s.title} <button class="log-btn" id="log-${s.logKey}" onclick="logSection('${s.logKey}')">LOGGA</button></div>`;
+    html+=`<div class="section-sub">${s.sub}</div>`;
+    s.items.forEach(ex=>{html+=rehabRow(`${s.id}-${ex.id}`,ex.label,ex.detail,"");});
+  });
+  html+=`<div class="section-label">DAGLIGA VANOR</div>`;
+  html+=rehabRow("ball","Bollen mot väggen","Myofascial release längs paraspinal · 5 min","ball");
+  html+=`<div style="margin-top:20px"><button class="btn btn-secondary" onclick="rehabCheck={};renderRehab()">ÅTERSTÄLL</button></div>`;
+  document.getElementById("rehab-content").innerHTML=html;
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
+function renderHistory(){
+  document.getElementById("hist-title").textContent=`${passLog.length} pass loggade`;
+  if(!passLog.length){document.getElementById("hist-content").innerHTML=`<p style="text-align:center;color:#4a5a4a;margin-top:60px">Inga pass loggade än.</p>`;return;}
+  document.getElementById("hist-content").innerHTML=[...passLog].reverse().map(e=>{
+    const doneEx=e.exercises.filter(ex=>ex.done);
+    return `<div class="history-entry">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+        <div><div style="font-size:14px;font-weight:700;color:#4caf50">${e.passName}</div><div style="font-size:11px;color:#4a5a4a;margin-top:2px">${e.focus}</div></div>
+        <div style="font-size:11px;color:#4a5a4a;text-align:right">${fmtDate(e.date)}</div>
+      </div>
+      ${e.exercises.map((ex,i)=>`<div class="history-row${i===e.exercises.length-1?' style="border:none"':""}">
+        <span style="color:${ex.done?"#e8f5e9":"#4a5a4a"}">${ex.done?"✓":"–"} ${ex.label}</span>
+        <span style="color:${ex.done?"#4caf50":"#4a5a4a"}">${ex.weight}</span>
+      </div>`).join("")}
+      ${e.extraActivity?`<div style="margin-top:8px;font-size:12px;color:#66bb6a">+ ${e.extraActivity}</div>`:""}
+      <div style="margin-top:8px;font-size:11px;color:#4a5a4a">${doneEx.length}/${e.exercises.length} övningar klara</div>
+    </div>`;
+  }).join("");
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+renderHome();
+</script>
+</body>
+</html>
