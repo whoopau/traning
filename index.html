@@ -148,6 +148,7 @@ textarea{width:100%;background:#0f1f0f;border:1px solid #1a2a1a;border-radius:10
 <div id="s-workout" class="screen page">
   <div class="ph">
     <div class="ph-left">
+      <button class="back" onclick="show('home')">← Tillbaka</button>
       <div class="sup">TRÄNINGSPASS</div>
       <div class="title">Alexander</div>
     </div>
@@ -292,20 +293,21 @@ const THORACIC = [
 ];
 
 const REHAB_SECTIONS = [
-  {id:"neck",title:"NACKE & AXLAR",sub:"Movement World – Tightness in neck & shoulders",logKey:"neck",items:[
-    {id:"r1",label:"Armar ut i T – palm upp",detail:"Palmer uppåt, håll · 10 reps/sida"},
+  {id:"stretch",title:"MOVEMENT WORLD – STRETCH",sub:"Tightness in neck & shoulders",logKey:"stretch",items:[
     {id:"r1b",label:"Thoracic rotation öppen",detail:"Armar i T, rotera öppet · 10 reps/sida"},
-    {id:"r2",label:"Sub occipital stretch",detail:"Nacklutning mot vägg, palm upp · 10 fram/10 bak"},
+    {id:"r2",label:"Sub occipital stretch",detail:"Händer korsade över bröstet, chin tuck, nick framåt · 10 reps"},
     {id:"r3",label:"Levator scapulae stretch",detail:"Hand bakom huvud mot vägg · 10 reps"},
     {id:"r4",label:"Boll mot bröst/axel",detail:"Myofascial release · 1–2 min"},
   ]},
-  {id:"nerve",title:"NERVRELEASE ÖVRE + NEDRE",sub:"Movement World – Upper & Lower body",logKey:"nerve",items:[
+  {id:"upper",title:"MOVEMENT WORLD – NERVRELEASE ÖVRE",sub:"Upper body nervous system release",logKey:"release",items:[
     {id:"r5",label:"Neck mobilization",detail:"Axel upp, sidoböj nacken bort · 6 reps/sida"},
-    {id:"r6",label:"Neck & shoulder mobilization",detail:"Arm fram/bak med thorakal rotation · 10 reps"},
+    {id:"r6",label:"Prayer stretch thoracic",detail:"Händer ihop framåt, skjut övre ryggen bakåt som en båge · 10 reps"},
     {id:"r7",label:"Median nerve slider",detail:"Arm 90°, utsida rotation, böj nacken · 6 reps/sida"},
     {id:"r8",label:"Radial nerve release",detail:"Knytnäve, skulderblad ner, arm upp · 6 reps/sida"},
     {id:"r9",label:"Ulnar nerve release",detail:"Arm upp, fingrar mot huvud, böj nacken · 6 reps/sida"},
     {id:"r10",label:"Ulnar nerve release 2",detail:"Böneposition, flytta åt sidan + nacke · 6 reps/sida"},
+  ]},
+  {id:"lower",title:"MOVEMENT WORLD – NERVRELEASE NEDRE",sub:"Lower body nervous system release",logKey:"release",items:[
     {id:"r11",label:"Spine mobilization",detail:"Katt-ko på alla fyra eller mot stol · 10 reps"},
     {id:"r12",label:"Side bend mobilization",detail:"Mot vägg, sidoböj åt båda håll · 12 reps"},
     {id:"r13",label:"Piriformis stretch",detail:"Vristben på motsatt knä, dra skenben · 10 reps/sida"},
@@ -315,11 +317,10 @@ const REHAB_SECTIONS = [
 ];
 
 const GOALS = [
-  {id:"gym",label:"Träningspass gym",target:3,unit:"pass"},
-  {id:"neck",label:"Nacke & axlar",target:3,unit:"ggr"},
-  {id:"nerve",label:"Nervrelease övre + nedre",target:3,unit:"ggr"},
-  {id:"foam",label:"Foam roller + thorakalövningar",target:5,unit:"dagar"},
-  {id:"ball",label:"Bollen mot väggen",target:3,unit:"ggr"},
+  {id:"gym",     label:"Träningspass gym",     target:3, unit:"pass"},
+  {id:"stretch", label:"MW – Stretch nacke",   target:3, unit:"ggr"},
+  {id:"release", label:"MW – Nervrelease",     target:3, unit:"ggr"},
+  {id:"thoracal",label:"Thorakal + Boll",      target:5, unit:"dagar"},
 ];
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
@@ -328,6 +329,14 @@ function ss(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 
 let passLog    = ls("passLog",[]);
 let weeklyLog  = ls("weeklyLog",{});
+// Migrate old keys to new structure
+if(weeklyLog.neck||weeklyLog.nerve||weeklyLog.foam||weeklyLog.ball){
+  weeklyLog.stretch=[...(weeklyLog.stretch||[]),...(weeklyLog.neck||[])];
+  weeklyLog.release=[...(weeklyLog.release||[]),...(weeklyLog.nerve||[])];
+  weeklyLog.thoracal=[...(weeklyLog.thoracal||[]),...(weeklyLog.foam||[]),...(weeklyLog.ball||[])];
+  delete weeklyLog.neck;delete weeklyLog.nerve;delete weeklyLog.foam;delete weeklyLog.ball;
+  ss("weeklyLog",weeklyLog);
+}
 let weights    = ls("weights",{});
 let passIdx    = 0;
 let checked    = {};
@@ -350,11 +359,10 @@ function weekStart(){
 function getCounts(){
   const ws=weekStart();
   return {
-    gym: passLog.filter(e=>new Date(e.date)>=ws).length,
-    neck:(weeklyLog.neck||[]).filter(d=>new Date(d)>=ws).length,
-    nerve:(weeklyLog.nerve||[]).filter(d=>new Date(d)>=ws).length,
-    foam:(weeklyLog.foam||[]).filter(d=>new Date(d)>=ws).length,
-    ball:(weeklyLog.ball||[]).filter(d=>new Date(d)>=ws).length,
+    gym:     passLog.filter(e=>new Date(e.date)>=ws).length,
+    stretch: (weeklyLog.stretch||[]).filter(d=>new Date(d)>=ws).length,
+    release: (weeklyLog.release||[]).filter(d=>new Date(d)>=ws).length,
+    thoracal:(weeklyLog.thoracal||[]).filter(d=>new Date(d)>=ws).length,
   };
 }
 function logWeekly(key){
@@ -398,14 +406,14 @@ function renderHome(){
   document.getElementById("home-goals-text").textContent=allDone?"🎯 Klart!":`${done}/${GOALS.length} mål`;
   document.getElementById("home-goals-text").style.color=allDone?"#4caf50":"#4a5a4a";
   document.getElementById("home-rings").innerHTML=
-    ringHTML(c.gym,3,"Gym")+ringHTML(c.neck,3,"Nacke")+ringHTML(c.nerve,3,"Nerve")+ringHTML(c.foam,5,"Foam")+ringHTML(c.ball,3,"Boll");
+    ringHTML(c.gym,3,"Gym")+ringHTML(c.stretch,3,"MW Stretch")+ringHTML(c.release,3,"MW Release")+ringHTML(c.thoracal,5,"Thorakal");
   const gymBar=document.getElementById("home-gym-bar");
   const gPct=Math.min(100,Math.round(c.gym/3*100));
   gymBar.style.width=gPct+"%";gymBar.className="bar"+(c.gym>=3?" done":"");
   document.getElementById("home-gym-stat").textContent=`${c.gym}/3 pass denna vecka`;
   document.getElementById("home-gym-stat").style.color=c.gym>=3?"#4caf50":"#66bb6a";
   document.getElementById("home-rehab-stats").innerHTML=
-    [["Nacke",c.neck,3],["Nervrelease",c.nerve,3],["Foam roller",c.foam,5],["Boll",c.ball,3]]
+    [["MW Stretch",c.stretch,3],["MW Release",c.release,3],["Thorakal",c.thoracal,5]]
     .map(([l,v,m])=>`<span class="stat${v>=m?" done":""}">${l} ${v}/${m}</span>`).join("");
   document.getElementById("home-history-stat").textContent=passLog.length>0?`${passLog.length} pass totalt`:"Inga pass loggade än";
   document.getElementById("hist-btn").textContent=`HISTORIK${passLog.length>0?" ("+passLog.length+")":""}`;
@@ -516,7 +524,7 @@ function submitPass(){
   };
   pendingEntry=entry;
   weeklyLog.gym=[...(weeklyLog.gym||[]),now];
-  if(cooldownDone.length>=2){weeklyLog.foam=[...(weeklyLog.foam||[]),now];}
+  if(cooldownDone.length>=2){weeklyLog.thoracal=[...(weeklyLog.thoracal||[]),now];}
   ss("weeklyLog",weeklyLog);
   checked={};extras={};
   document.getElementById("act-sub").textContent=`${p.name} · ${fmtDate(now)}`;
@@ -546,7 +554,7 @@ function renderSummary(e){
   let html="";
   if(doneEx.length){
     html+=`<div class="summary-card"><div class="section-label" style="margin:0 0 10px">ÖVNINGAR KLARA</div>`;
-    doneEx.forEach((ex,i)=>{html+=`<div class="summary-row${i<doneEx.length-1?"":' style="border:none"'}"><span style="color:#e8f5e9">✓ ${ex.label}</span><span style="color:#4caf50;font-weight:600">${ex.weight}</span></div>`;});
+    doneEx.forEach((ex,i)=>{html+=`<div class="summary-row" style="${i<doneEx.length-1?"":"border:none"}"><span style="color:#e8f5e9">✓ ${ex.label}</span><span style="color:#4caf50;font-weight:600">${ex.weight}</span></div>`;});
     html+=`</div>`;
   }
   if(missedEx.length){
@@ -561,7 +569,7 @@ function renderSummary(e){
   }
   if(e.extras?.length){
     html+=`<div class="summary-card"><div class="section-label" style="margin:0 0 10px">EXTRA</div>`;
-    e.extras.forEach((ex,i)=>{html+=`<div class="summary-row${i<e.extras.length-1?"":' style="border:none"'}"><span>✓ ${ex.label}</span><span style="color:#4caf50">${ex.weight}</span></div>`;});
+    e.extras.forEach((ex,i)=>{html+=`<div class="summary-row" style="${i<e.extras.length-1?"":"border:none"}"><span>✓ ${ex.label}</span><span style="color:#4caf50">${ex.weight}</span></div>`;});
     html+=`</div>`;
   }
   if(e.extraActivity){
@@ -606,9 +614,9 @@ function toggleRehab(key,autoLog){
   if(rehabCheck[key]&&autoLog)logWeekly(autoLog);
 }
 
-function logSection(key){
+function logSection(key,btnEl){
   logWeekly(key);
-  const btn=document.getElementById("log-"+key);
+  const btn=btnEl||document.getElementById("log-"+key);
   if(btn){btn.textContent="✓ Loggat!";btn.style.color="#4caf50";setTimeout(()=>{btn.textContent="LOGGA";btn.style.color="";},2000);}
 }
 
@@ -625,16 +633,15 @@ function rehabRow(key,label,detail,autoLog){
 function renderRehab(){
   rehabCheck={};
   let html="";
-  html+=`<div class="section-label">THORAKALÖVNINGAR <button class="log-btn" id="log-foam" onclick="logSection('foam')">LOGGA</button></div>`;
-  html+=`<div class="section-sub">Foam roller · Extension · Rotation · Stretch</div>`;
+  html+=`<div class="section-label">THORAKALÖVNINGAR <button class="log-btn" id="log-thoracal" onclick="logSection('thoracal',this)">LOGGA</button></div>`;
+  html+=`<div class="section-sub">Foam roller · Extension · Rotation · Stretch · Boll</div>`;
   THORACIC.forEach(ex=>{html+=rehabRow(`t-${ex.id}`,ex.label,ex.detail,"");});
+  html+=rehabRow("ball","Bollen mot väggen","Myofascial release längs paraspinal · 5 min","thoracal");
   REHAB_SECTIONS.forEach(s=>{
-    html+=`<div class="section-label">${s.title} <button class="log-btn" id="log-${s.logKey}" onclick="logSection('${s.logKey}')">LOGGA</button></div>`;
+    html+=`<div class="section-label" style="margin-top:24px;font-size:11px">${s.title} <button class="log-btn" id="log-${s.id}" onclick="logSection('${s.logKey}',this)">LOGGA</button></div>`;
     html+=`<div class="section-sub">${s.sub}</div>`;
     s.items.forEach(ex=>{html+=rehabRow(`${s.id}-${ex.id}`,ex.label,ex.detail,"");});
   });
-  html+=`<div class="section-label">DAGLIGA VANOR</div>`;
-  html+=rehabRow("ball","Bollen mot väggen","Myofascial release längs paraspinal · 5 min","ball");
   html+=`<div style="margin-top:20px"><button class="btn btn-secondary" onclick="rehabCheck={};renderRehab()">ÅTERSTÄLL</button></div>`;
   document.getElementById("rehab-content").innerHTML=html;
 }
@@ -650,7 +657,7 @@ function renderHistory(){
         <div><div style="font-size:14px;font-weight:700;color:#4caf50">${e.passName}</div><div style="font-size:11px;color:#4a5a4a;margin-top:2px">${e.focus}</div></div>
         <div style="font-size:11px;color:#4a5a4a;text-align:right">${fmtDate(e.date)}</div>
       </div>
-      ${e.exercises.map((ex,i)=>`<div class="history-row${i===e.exercises.length-1?' style="border:none"':""}">
+      ${e.exercises.map((ex,i)=>`<div class="history-row" style="${i===e.exercises.length-1?"border:none":""}">
         <span style="color:${ex.done?"#e8f5e9":"#4a5a4a"}">${ex.done?"✓":"–"} ${ex.label}</span>
         <span style="color:${ex.done?"#4caf50":"#4a5a4a"}">${ex.weight}</span>
       </div>`).join("")}
