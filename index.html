@@ -99,6 +99,7 @@ textarea{width:100%;background:#0f1f0f;border:1px solid #1a2a1a;border-radius:10
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
       <button onclick="renderHome()" style="background:none;border:1px solid #1a2a1a;border-radius:8px;color:#66bb6a;font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit">↻ Uppdatera</button>
     </div>
+    <div id="backup-warning" onclick="show('backup')" style="display:none;background:#2a1a1a;border:1px solid #e57373;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#e57373;cursor:pointer">⚠ <span id="backup-warning-text"></span> Tryck för att säkerhetskopiera →</div>
     <div class="card" id="home-week-card" onclick="show('week')">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <span class="tag" style="margin:0">VECKANS MÅL</span>
@@ -113,6 +114,11 @@ textarea{width:100%;background:#0f1f0f;border:1px solid #1a2a1a;border-radius:10
       <div class="card-sub">Pass 1 · Pass 2 · Extraövningar</div>
       <div class="bar-wrap"><div class="bar" id="home-gym-bar" style="width:0%"></div></div>
       <div id="home-gym-stat" style="font-size:12px;color:#66bb6a;margin-top:6px;font-weight:600"></div>
+    </div>
+    <div class="card" onclick="logOtherActivity()">
+      <span class="tag">GYM</span>
+      <div class="card-title">Annan aktivitet</div>
+      <div class="card-sub">T.ex. löpning/kondition – räknas inte som styrkepass</div>
     </div>
     <div class="card" onclick="show('rehab')">
       <span class="tag">DAGLIGEN</span>
@@ -143,7 +149,7 @@ textarea{width:100%;background:#0f1f0f;border:1px solid #1a2a1a;border-radius:10
     </div>
   </div>
   <div class="pad">
-    <div style="font-size:13px;color:#4a5a4a;margin-bottom:20px;line-height:1.5">All din data sparas i telefonens webbläsare. Exportera regelbundet som backup, eller om du byter enhet.</div>
+    <div style="font-size:13px;color:#4a5a4a;margin-bottom:20px;line-height:1.5">All din data sparas i telefonens webbläsare. En backup-fil (.json) sparas automatiskt till telefonen varje gång du slutför ett pass. Du kan även kopiera data manuellt när du vill, t.ex. för att skicka till Claude.</div>
 
     <div class="card" style="cursor:default">
       <span class="tag">EXPORTERA</span>
@@ -459,6 +465,12 @@ function renderHome(){
     .map(([l,v,m])=>`<span class="stat${v>=m?" done":""}">${l} ${v}/${m}</span>`).join("");
   document.getElementById("home-history-stat").textContent=passLog.length>0?`${passLog.length} pass totalt`:"Inga pass loggade än";
   document.getElementById("hist-btn").textContent=`HISTORIK${passLog.length>0?" ("+passLog.length+")":""}`;
+  const staleDays=daysSinceBackup();
+  const warn=document.getElementById("backup-warning");
+  if(staleDays>=7&&passLog.length>0){
+    warn.style.display="block";
+    document.getElementById("backup-warning-text").textContent=staleDays>=999?"Ingen backup gjord än.":`Ingen backup på ${staleDays} dagar.`;
+  }else{warn.style.display="none";}
 }
 
 // ─── WEEK ────────────────────────────────────────────────────────────────────
@@ -554,6 +566,17 @@ function renderWorkout(){
   updateProgress();
 }
 
+// Logs a gym visit that wasn't strength training (e.g. running/cardio).
+// Goes to history like any pass, but does NOT count toward the weekly
+// strength-pass goal ring (weeklyLog.gym), since it's a different kind of activity.
+function logOtherActivity(){
+  const now=new Date().toISOString();
+  pendingEntry={date:now,passName:"Annan aktivitet",focus:"Ej styrka – t.ex. löpning, kondition",exercises:[],extras:[],cooldownDone:[]};
+  document.getElementById("act-sub").textContent=`Annan aktivitet · ${fmtDate(now)}`;
+  document.getElementById("act-input").value="";
+  show("activity");
+}
+
 function submitPass(){
   const p=PASSES[passIdx];
   const doneExCount=p.exercises.filter(e=>checked[`e-${e.id}`]).length;
@@ -582,12 +605,14 @@ function finishPass(){
   const extra=document.getElementById("act-input").value.trim();
   if(extra&&pendingEntry)pendingEntry.extraActivity=extra;
   passLog.push(pendingEntry);ss("passLog",passLog);
+  autoBackupDownload();
   renderSummary(pendingEntry);
   show("summary");
 }
 
 function skipActivity(){
   passLog.push(pendingEntry);ss("passLog",passLog);
+  autoBackupDownload();
   renderSummary(pendingEntry);
   show("summary");
 }
@@ -718,12 +743,39 @@ function exportData(){
   const data={passLog,weeklyLog,weights,exportDate:new Date().toISOString()};
   const text=JSON.stringify(data,null,2);
   const fullText=`ALEXANDER TRÄNING – BACKUP\nExporterad: ${new Date().toLocaleDateString("sv-SE",{weekday:"long",day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"})}\n\n${text}`;
+  markBackedUp();
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(fullText).then(()=>{
       const s=document.getElementById("export-status");s.style.display="block";
       setTimeout(()=>{s.style.display="none";},4000);
     }).catch(()=>{fallbackCopy(fullText);});
   }else{fallbackCopy(fullText);}
+}
+
+// ─── AUTO-BACKUP ─────────────────────────────────────────────────────────────
+// Saves a real .json file to the device (Downloads/Files) so data survives
+// even if the browser's localStorage gets cleared. Runs automatically after
+// each finished pass; also markable via manual export above.
+function markBackedUp(){ ss("lastBackupDate",new Date().toISOString()); }
+
+function autoBackupDownload(){
+  try{
+    const data={passLog,weeklyLog,weights,exportDate:new Date().toISOString()};
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const dateStr=new Date().toISOString().slice(0,10);
+    const a=document.createElement("a");
+    a.href=url;a.download=`traning-backup-${dateStr}.json`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+    markBackedUp();
+  }catch(e){/* silent - manual export still available */}
+}
+
+function daysSinceBackup(){
+  const last=ls("lastBackupDate",null);
+  if(!last)return 999;
+  return Math.floor((Date.now()-new Date(last).getTime())/86400000);
 }
 
 function fallbackCopy(text){
