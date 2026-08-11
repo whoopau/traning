@@ -115,16 +115,16 @@ textarea{width:100%;background:#0f1f0f;border:1px solid #1a2a1a;border-radius:10
       <div class="bar-wrap"><div class="bar" id="home-gym-bar" style="width:0%"></div></div>
       <div id="home-gym-stat" style="font-size:12px;color:#66bb6a;margin-top:6px;font-weight:600"></div>
     </div>
-    <div class="card" onclick="logOtherActivity()">
-      <span class="tag">GYM</span>
-      <div class="card-title">Annan aktivitet</div>
-      <div class="card-sub">T.ex. löpning/kondition – räknas inte som styrkepass</div>
-    </div>
     <div class="card" onclick="show('rehab')">
       <span class="tag">DAGLIGEN</span>
       <div class="card-title">Rehab & Nervrelease</div>
       <div class="card-sub">Thorakal · Nacke & axlar · Nervrelease</div>
       <div class="stats-row" id="home-rehab-stats"></div>
+    </div>
+    <div class="card" onclick="logOtherActivity()">
+      <span class="tag">ÖVRIGT</span>
+      <div class="card-title">Övrig träning</div>
+      <div class="card-sub">T.ex. löpning/kondition – räknas inte som styrkepass</div>
     </div>
     <div class="card" onclick="show('history')">
       <span class="tag">HISTORIK</span>
@@ -406,7 +406,7 @@ function weekStart(){
 function getCounts(){
   const ws=weekStart();
   return {
-    gym:           passLog.filter(e=>new Date(e.date)>=ws).length,
+    gym:           passLog.filter(e=>new Date(e.date)>=ws&&!e.isOther&&e.passName!=="Annan aktivitet").length,
     stretch:       (weeklyLog.stretch||[]).filter(d=>new Date(d)>=ws).length,
     release_upper: (weeklyLog.release_upper||[]).filter(d=>new Date(d)>=ws).length,
     release_lower: (weeklyLog.release_lower||[]).filter(d=>new Date(d)>=ws).length,
@@ -571,8 +571,8 @@ function renderWorkout(){
 // strength-pass goal ring (weeklyLog.gym), since it's a different kind of activity.
 function logOtherActivity(){
   const now=new Date().toISOString();
-  pendingEntry={date:now,passName:"Annan aktivitet",focus:"Ej styrka – t.ex. löpning, kondition",exercises:[],extras:[],cooldownDone:[]};
-  document.getElementById("act-sub").textContent=`Annan aktivitet · ${fmtDate(now)}`;
+  pendingEntry={date:now,passName:"Övrig träning",focus:"Ej styrka – t.ex. löpning, kondition",exercises:[],extras:[],cooldownDone:[],isOther:true};
+  document.getElementById("act-sub").textContent=`Övrig träning · ${fmtDate(now)}`;
   document.getElementById("act-input").value="";
   show("activity");
 }
